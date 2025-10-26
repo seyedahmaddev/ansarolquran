@@ -8,58 +8,59 @@ export default function ContactForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
     if (!agreed) {
-      setMessage({ type: 'error', text: 'لطفاً قوانین را تأیید کنید' })
-      return
+      setMessage({ type: 'error', text: 'لطفاً قوانین را تأیید کنید' });
+      return;
     }
 
-    setIsLoading(true)
-    setMessage({ type: '', text: '' })
+    setIsLoading(true);
+    setMessage({ type: '', text: '' });
 
-    const formData = {
-      firstName: (e.target as any)['first-name'].value,
-      lastName: (e.target as any)['last-name'].value,
-      company: (e.target as any).company.value || '',
-      email: (e.target as any).email.value,
-      phone: (e.target as any)['phone-number'].value,
-      message: (e.target as any).message.value,
-    }
+    const form = e.currentTarget; // ✅ نوع دقیق HTMLFormElement است
+    const formData = new FormData(form);
+
+    const data = {
+      firstName: formData.get('first-name') as string,
+      lastName: formData.get('last-name') as string,
+      company: (formData.get('company') as string) || '',
+      email: formData.get('email') as string,
+      phone: formData.get('phone-number') as string,
+      message: formData.get('message') as string,
+    };
 
     try {
-      const response = await fetch('/api/send', {
+      const res = await fetch('/api/send', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
 
-      const data = await response.json()
+      const result = await res.json();
 
-      if (response.ok) {
-        setMessage({ 
-          type: 'success', 
-          text: 'پیام شما با موفقیت ارسال شد! به زودی با شما تماس خواهیم گرفت.' 
-        })
-        // ریست فرم
-        ;(e.target as HTMLFormElement).reset()
-        setAgreed(false)
+      if (res.ok) {
+        setMessage({
+          type: 'success',
+          text: 'پیام شما با موفقیت ارسال شد! به زودی با شما تماس خواهیم گرفت.',
+        });
+        form.reset(); // ✅ بدون ارور
+        setAgreed(false);
       } else {
-        throw new Error(data.error || 'خطا در ارسال پیام')
+        throw new Error(result.error || 'خطا در ارسال پیام');
       }
-    } catch (error) {
-      console.error('Error:', error)
-      setMessage({ 
-        type: 'error', 
-        text: 'متأسفانه در ارسال پیام مشکلی پیش آمد. لطفاً دوباره تلاش کنید.' 
-      })
+    } catch (err) {
+      console.error('Error:', err);
+      setMessage({
+        type: 'error',
+        text: 'متأسفانه در ارسال پیام مشکلی پیش آمد. لطفاً دوباره تلاش کنید.',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
 
   return (
     <div className="bg-white px-6 py-24 sm:py-32 lg:px-8 text-right font-vazir" dir="rtl">
@@ -72,11 +73,10 @@ export default function ContactForm() {
 
       {/* نمایش پیام‌های وضعیت */}
       {message.text && (
-        <div className={`mx-auto mt-8 max-w-xl p-4 rounded-md ${
-          message.type === 'success' 
-            ? 'bg-green-50 text-green-800 border border-green-200' 
+        <div className={`mx-auto mt-8 max-w-xl p-4 rounded-md ${message.type === 'success'
+            ? 'bg-green-50 text-green-800 border border-green-200'
             : 'bg-red-50 text-red-800 border border-red-200'
-        }`}>
+          }`}>
           <div className="flex items-center">
             {message.type === 'success' ? (
               <svg className="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20">
